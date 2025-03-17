@@ -16,5 +16,12 @@ public class MainHome extends AppCompatActivity {
             Intent intent = new Intent(MainHome.this, home.class);
             startActivity(intent);
         });
+
+        Button reactionTestButton = findViewById(R.id.reactionTestButton);
+        reactionTestButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainHome.this, ReactionTimeActivity.class);
+            startActivity(intent);
+        });
+
     }
 }

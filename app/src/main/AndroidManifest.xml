@@ -25,6 +25,7 @@
         </intent-filter>
         </activity>
         <activity android:name=".home"/>
+        <activity android:name=".ReactionTimeActivity"/>
 
     </application>
 
