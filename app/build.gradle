@@ -33,6 +33,7 @@ dependencies {
     implementation libs.appcompat
     implementation libs.activity
     implementation libs.constraintlayout
+    implementation libs.wear
 }
 
 configurations.implementation {
