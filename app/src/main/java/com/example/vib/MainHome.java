@@ -23,5 +23,12 @@ public class MainHome extends AppCompatActivity {
             startActivity(intent);
         });
 
+        // Neuer Button für den Interpretationstest
+        Button interpretationButton = findViewById(R.id.interpretationTestButton);
+        interpretationButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainHome.this, InterpretationModeActivity.class); // Ziel ist die neue Activity
+            startActivity(intent);
+        });
+
     }
 }

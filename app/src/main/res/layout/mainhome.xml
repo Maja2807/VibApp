@@ -19,5 +19,14 @@
         android:layout_marginTop="70dp"
         android:layout_marginLeft="20dp"/>
 
+    <Button
+        android:id="@+id/interpretationTestButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Interpretation"
+        android:textSize="16sp"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"/>
+
 
 </androidx.wear.widget.BoxInsetLayout>

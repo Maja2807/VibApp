@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Text, der den aktuellen Status des Tests anzeigt -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Warte auf Start"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"
+        android:visibility="gone" /> <!-- Dieser Text wird zur Anzeige des Status genutzt -->
+
+    <!-- Button zum Starten des Tests -->
+    <Button
+        android:id="@+id/startTestButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Starte Test"
+        android:textSize="16sp"
+        android:layout_marginBottom="20dp" />
+
+    <!-- Zurück Button (wird während des Tests angezeigt, wenn der Test abgeschlossen ist) -->
+    <Button
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Zurück"
+        android:textSize="16sp"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"
+        android:visibility="gone" /> <!-- Wird nach Abschluss des Tests angezeigt -->
+
+</LinearLayout>
