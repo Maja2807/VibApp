@@ -5,26 +5,34 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 public class InterpretationModeActivity extends AppCompatActivity {
+
     private Vibrator vibrator;
+    private TextView statusText;
+    private Button startTestButton, backButton;
     private Handler handler = new Handler();
+    private boolean testRunning = false;
+    private long lastPeakTime = 0;
+    private long lastValleyTime = 0;
+    private ArrayList<Long> peakReactions = new ArrayList<>();
+    private ArrayList<Long> valleyReactions = new ArrayList<>();
     private Random random = new Random();
-    private long vibrationStartTime;
-    private boolean waitingForReaction = false;
-    private List<Long> reactionTimes = new ArrayList<>();
-    private int remainingVibrations = 10;  // Anzahl der Vibrationen im Test
-    private boolean isHighPoint = false;  // Wird der Hochpunkt oder Tiefpunkt erkannt?
+
+    private final int TEST_DURATION = 60000; // 1 Minute (in Millisekunden)
+    private long testStartTime;
+
+    private int currentLevel = 0; // Simulierter Kurvenverlauf (steigt/fällt)
+    private boolean isGoingUp = true; // Richtung der Kurve
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,91 +40,154 @@ public class InterpretationModeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_interpretation_mode);
 
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        TextView statusText = findViewById(R.id.statusText);
+        statusText = findViewById(R.id.statusText);
+        startTestButton = findViewById(R.id.startTestButton);
+        backButton = findViewById(R.id.backButton);
 
-        Button startButton = findViewById(R.id.startTestButton);
-        startButton.setOnClickListener(v -> startTest());
+        startTestButton.setOnClickListener(v -> startTest());
+        backButton.setOnClickListener(v -> finish());
 
-        findViewById(R.id.backButton).setOnClickListener(v -> finish());  // Zurück-Button
-
+        // Nutzer kann irgendwo auf den Bildschirm tippen, um zu reagieren
+        findViewById(android.R.id.content).setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN && testRunning) {
+                recordReaction();
+                return true;
+            }
+            return false;
+        });
     }
 
     private void startTest() {
-        reactionTimes.clear();
-        remainingVibrations = 10;
-        isHighPoint = false;
-        scheduleNextVibration();
-        findViewById(R.id.startTestButton).setEnabled(false); // Disable start button
+        testRunning = true;
+        startTestButton.setVisibility(View.GONE);
+        backButton.setVisibility(View.GONE);
+        statusText.setText("Test läuft...");
+
+        testStartTime = SystemClock.elapsedRealtime();
+        scheduleNextStep();
     }
 
-    private void scheduleNextVibration() {
-        if (remainingVibrations <= 0) {
-            finishTest();
+    private void scheduleNextStep() {
+        long elapsedTime = SystemClock.elapsedRealtime() - testStartTime;
+
+        if (elapsedTime >= TEST_DURATION) {
+            endTest();
             return;
         }
 
-        long delay = random.nextInt(5000) + 1000; // zufällige Verzögerung für nächste Vibration (1–5s)
+        int nextEventTime = random.nextInt(3000) + 1000; // Zufälliger Abstand: 1s - 4s
 
-        handler.postDelayed(() -> {
-            if (vibrator != null) {
-                // Vibration abhängig vom aktuellen Punkt (hoch oder tief)
-                VibrationEffect effect = getVibrationEffect();
-                vibrator.vibrate(effect);
-                vibrationStartTime = SystemClock.elapsedRealtime();
-                waitingForReaction = true;
-            }
-        }, delay);
+        handler.postDelayed(this::generateNextCurveStep, nextEventTime);
     }
 
-    private VibrationEffect getVibrationEffect() {
-        if (isHighPoint) {
-            // Schnelle Impulse für Hochpunkt (kurze Zeitabstände)
-            long[] timings = {50, 50};  // kurze Abstände für "Blinken"
-            int[] amplitudes = {128, 128};  // gleiche Amplitude für "Blinken"
-            isHighPoint = false;  // Hochpunkt nach dieser Vibration als erkannt markieren
-            return VibrationEffect.createWaveform(timings, amplitudes, -1);
+    private void generateNextCurveStep() {
+        if (!testRunning) return;
+
+        if (isGoingUp) {
+            currentLevel++;
         } else {
-            // Langsame Impulse für Anstieg/Abfall (große Zeitabstände)
-            long[] timings = {1000, 500, 1000};  // große Zeitabstände für Anstieg/Abfall
-            int[] amplitudes = {128, 128, 128};  // gleiche Amplitude
-            isHighPoint = true;  // Nächste Vibration ist ein Hochpunkt
-            return VibrationEffect.createWaveform(timings, amplitudes, -1);
+            currentLevel--;
         }
+
+        // Hochpunkt erreicht
+        if (currentLevel >= 5) {
+            triggerPeak();
+            isGoingUp = false;
+        }
+        // Tiefpunkt erreicht
+        else if (currentLevel <= -5) {
+            triggerValley();
+            isGoingUp = true;
+        }
+        // Zwischenzustand (steigende oder fallende Kurve)
+        else {
+            triggerIntermediateState();
+        }
+
+        scheduleNextStep();
     }
 
-    private void recordReactionTime() {
-        if (waitingForReaction) {
-            long reactionTime = SystemClock.elapsedRealtime() - vibrationStartTime;
-            reactionTimes.add(reactionTime);
-            waitingForReaction = false;
-            remainingVibrations--;
-            scheduleNextVibration();  // Nächste Vibration planen
-        }
+    private void triggerPeak() {
+        lastPeakTime = SystemClock.elapsedRealtime();
+        vibratePattern(new long[]{100, 100, 100, 100, 100}, 128); // Hochpunkt = schnelle Impulse
+        runOnUiThread(() -> statusText.setText("🟢 Hochpunkt erreicht!"));
+        System.out.println("🟢 Hochpunkt um " + lastPeakTime + " ms");
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            recordReactionTime();  // Reaktion registrieren
-            return true;
-        }
-        return super.onTouchEvent(event);
+    private void triggerValley() {
+        lastValleyTime = SystemClock.elapsedRealtime();
+        vibrate(2000, 128); // Tiefpunkt = lange Vibration
+        runOnUiThread(() -> statusText.setText("🔵 Tiefpunkt erreicht!"));
+        System.out.println("🔵 Tiefpunkt um " + lastValleyTime + " ms");
     }
 
-    private void finishTest() {
-        // Berechnung der durchschnittlichen Reaktionszeit
-        if (!reactionTimes.isEmpty()) {
-            long sum = 0;
-            for (long time : reactionTimes) {
-                sum += time;
-            }
-            long averageReactionTime = sum / reactionTimes.size();
-            Log.d("InterpretationMode", "Durchschnittliche Reaktionszeit: " + averageReactionTime + " ms");
+    private void triggerIntermediateState() {
+        if (isGoingUp) {
+            // Steigende Kurve: Vibrationen werden schneller
+            long duration = 500 - (currentLevel * 20);  // Je weiter, desto schneller
+            if (duration < 100) duration = 100;  // Minimale Dauer für Vibration
+            vibrate(duration, 64);
+            runOnUiThread(() -> statusText.setText("📈 Steigend..."));
+            System.out.println("📈 Steigende Kurve");
         } else {
-            Log.d("InterpretationMode", "Keine gültigen Reaktionszeiten erfasst.");
+            // Fallende Kurve: Vibrationen werden langsamer
+            long duration = 500 + (Math.abs(currentLevel) * 20);  // Je weiter, desto langsamer
+            if (duration > 1000) duration = 1000;  // Maximale Dauer für Vibration
+            vibrate(duration, 64);
+            runOnUiThread(() -> statusText.setText("📉 Fallend..."));
+            System.out.println("📉 Fallende Kurve");
+        }
+    }
+
+    private void vibrate(long duration, int amplitude) {
+        if (vibrator != null) {
+            vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude));
+        }
+    }
+
+    private void vibratePattern(long[] pattern, int amplitude) {
+        if (vibrator != null) {
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1)); // -1 bedeutet: Kein Wiederholen
+        }
+    }
+
+    private void recordReaction() {
+        long reactionTime = SystemClock.elapsedRealtime();
+
+        if (lastPeakTime > 0 && reactionTime > lastPeakTime && reactionTime - lastPeakTime < 3000) {
+            long reactionDelay = reactionTime - lastPeakTime;
+            peakReactions.add(reactionDelay);
+            runOnUiThread(() -> statusText.setText("Reaktion auf Hochpunkt: " + reactionDelay + " ms"));
+            System.out.println("✅ Reaktion auf Hochpunkt: " + reactionDelay + " ms");
+        } else if (lastValleyTime > 0 && reactionTime > lastValleyTime && reactionTime - lastValleyTime < 3000) {
+            long reactionDelay = reactionTime - lastValleyTime;
+            valleyReactions.add(reactionDelay);
+            runOnUiThread(() -> statusText.setText("Reaktion auf Tiefpunkt: " + reactionDelay + " ms"));
+            System.out.println("✅ Reaktion auf Tiefpunkt: " + reactionDelay + " ms");
+        } else {
+            runOnUiThread(() -> statusText.setText("⚠ Falsche Reaktion!"));
+        }
+    }
+
+    private void endTest() {
+        testRunning = false;
+        backButton.setVisibility(View.VISIBLE);
+        startTestButton.setVisibility(View.VISIBLE);
+
+        if (peakReactions.isEmpty() && valleyReactions.isEmpty()) {
+            statusText.setText("❌ Keine korrekten Reaktionen erfasst.");
+            return;
         }
 
-        // Zeige den "Zurück-Button" an, wenn der Test abgeschlossen ist
-        findViewById(R.id.startTestButton).setEnabled(true);
+        long avgPeakReaction = peakReactions.stream().mapToLong(Long::longValue).sum() / (peakReactions.isEmpty() ? 1 : peakReactions.size());
+        long avgValleyReaction = valleyReactions.stream().mapToLong(Long::longValue).sum() / (valleyReactions.isEmpty() ? 1 : valleyReactions.size());
+
+        String result = "Durchschnittliche Reaktionszeiten:\n" +
+                "🟢 Hochpunkt: " + avgPeakReaction + " ms\n" +
+                "🔵 Tiefpunkt: " + avgValleyReaction + " ms";
+
+        statusText.setText(result);
+        System.out.println(result);
     }
 }
+

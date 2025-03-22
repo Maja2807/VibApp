@@ -56,7 +56,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
         handler.postDelayed(() -> {
             if (vibrator != null) {
-                VibrationEffect effect = VibrationEffect.createOneShot(50, 128);
+                VibrationEffect effect = VibrationEffect.createOneShot(200, 250);
                 vibrator.vibrate(effect);
                 vibrationStartTime = SystemClock.elapsedRealtime();
                 waitingForReaction = true;
