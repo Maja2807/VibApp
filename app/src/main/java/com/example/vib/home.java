@@ -54,10 +54,12 @@ public class home extends AppCompatActivity {
 
     private void startMaxVibration() {
         if (vibrator == null) return;
-        stopVibration(); // Vorherige Vibrationen stoppen!
+        stopVibration(); // Vorherige Vibrationen stoppen
 
-        long[] timings = {1000, 800, 600, 400, 200, 100}; // Immer schneller
-        int[] amplitudes = {100, 120, 140, 160, 180, 200};
+        //long[] timings = {1000, 800, 600, 400, 200, 100}; // Immer schneller
+        //int[] amplitudes = {100, 120, 140, 160, 180, 200};
+        long[] timings = {130, 130, 130, 130, 130, 130}; //hoher Wert = mehrere kurze Vibrationen
+        int[] amplitudes = {200, 200, 200, 200, 200, 200};
 
         runVibrationPattern(timings, amplitudes);
     }
@@ -66,8 +68,10 @@ public class home extends AppCompatActivity {
         if (vibrator == null) return;
         stopVibration(); // Vorherige Vibrationen stoppen!
 
-        long[] timings = {100, 200, 400, 600, 800, 1000}; // Immer langsamer
-        int[] amplitudes = {200, 180, 160, 140, 120, 100};
+        //long[] timings = {100, 200, 400, 600, 800, 1000}; // Immer langsamer
+        //int[] amplitudes = {200, 180, 160, 140, 120, 100};
+        long[] timings = {2000}; // niedriger Wert = eine lange Vibration
+        int[] amplitudes = {200};
 
         runVibrationPattern(timings, amplitudes);
     }

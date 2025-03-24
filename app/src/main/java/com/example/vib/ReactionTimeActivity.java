@@ -21,7 +21,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
     private Random random = new Random();
     private long vibrationStartTime;
     private boolean waitingForReaction = false;
-    private int remainingVibrations = 10; // Anzahl der Vibrationen pro Testlauf
+    private int remainingVibrations = 30; // Anzahl der Vibrationen pro Testlauf
     private List<Long> reactionTimes = new ArrayList<>(); // Speicherung der Reaktionszeiten
     private Button backButton;
 
@@ -40,7 +40,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
     private void startTest() {
         reactionTimes.clear();
-        remainingVibrations = 10;
+        remainingVibrations = 30;
         backButton.setVisibility(View.GONE); // Zurück-Button ausblenden
         scheduleNextVibration();
         findViewById(R.id.startTestButton).setEnabled(false);
@@ -52,7 +52,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
             return;
         }
 
-        long delay = random.nextInt(9990) + 10; // Zufällige Pause (10 ms – 10 s)
+        long delay = random.nextInt(9990) + 15; // Zufällige Pause (10 ms – 15 s)
 
         handler.postDelayed(() -> {
             if (vibrator != null) {

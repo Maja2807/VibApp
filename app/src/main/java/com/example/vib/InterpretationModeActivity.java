@@ -28,7 +28,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
     private ArrayList<Long> valleyReactions = new ArrayList<>();
     private Random random = new Random();
 
-    private final int TEST_DURATION = 60000; // 1 Minute (in Millisekunden)
+    private final int TEST_DURATION = 180000; // 3 Minuten (in Millisekunden)
     private long testStartTime;
 
     private int currentLevel = 0; // Simulierter Kurvenverlauf (steigt/fällt)
@@ -109,7 +109,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
 
     private void triggerPeak() {
         lastPeakTime = SystemClock.elapsedRealtime();
-        vibratePattern(new long[]{100, 100, 100, 100, 100}, 128); // Hochpunkt = schnelle Impulse
+        vibratePattern(new long[]{130, 130, 130, 130, 130, 130}, 250); // Hochpunkt = schnelle Impulse
         runOnUiThread(() -> statusText.setText("🟢 Hochpunkt erreicht!"));
         System.out.println("🟢 Hochpunkt um " + lastPeakTime + " ms");
     }
@@ -123,16 +123,14 @@ public class InterpretationModeActivity extends AppCompatActivity {
 
     private void triggerIntermediateState() {
         if (isGoingUp) {
-            // Steigende Kurve: Vibrationen werden schneller
-            long duration = 500 - (currentLevel * 20);  // Je weiter, desto schneller
-            if (duration < 100) duration = 100;  // Minimale Dauer für Vibration
+            long duration = 500 - (currentLevel * 20);
+            if (duration < 100) duration = 100;
             vibrate(duration, 64);
             runOnUiThread(() -> statusText.setText("📈 Steigend..."));
             System.out.println("📈 Steigende Kurve");
         } else {
-            // Fallende Kurve: Vibrationen werden langsamer
-            long duration = 500 + (Math.abs(currentLevel) * 20);  // Je weiter, desto langsamer
-            if (duration > 1000) duration = 1000;  // Maximale Dauer für Vibration
+            long duration = 500 + (Math.abs(currentLevel) * 20);
+            if (duration > 1000) duration = 1000;
             vibrate(duration, 64);
             runOnUiThread(() -> statusText.setText("📉 Fallend..."));
             System.out.println("📉 Fallende Kurve");
@@ -147,7 +145,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
 
     private void vibratePattern(long[] pattern, int amplitude) {
         if (vibrator != null) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1)); // -1 bedeutet: Kein Wiederholen
+            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
         }
     }
 
@@ -166,6 +164,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
             System.out.println("✅ Reaktion auf Tiefpunkt: " + reactionDelay + " ms");
         } else {
             runOnUiThread(() -> statusText.setText("⚠ Falsche Reaktion!"));
+            System.out.println("⚠ Falsche Reaktion!");
         }
     }
 
@@ -190,4 +189,3 @@ public class InterpretationModeActivity extends AppCompatActivity {
         System.out.println(result);
     }
 }
-
