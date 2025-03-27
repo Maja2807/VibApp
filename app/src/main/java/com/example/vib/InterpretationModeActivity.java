@@ -1,10 +1,11 @@
 package com.example.vib;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -13,33 +14,40 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
-import java.util.Random;
-
 public class InterpretationModeActivity extends AppCompatActivity {
 
-    private Vibrator vibrator;
     private TextView statusText;
     private Button startTestButton, backButton;
     private Handler handler = new Handler();
     private boolean testRunning = false;
-    private long lastPeakTime = 0;
-    private long lastValleyTime = 0;
-    private ArrayList<Long> peakReactions = new ArrayList<>();
-    private ArrayList<Long> valleyReactions = new ArrayList<>();
-    private Random random = new Random();
-
-    private final int TEST_DURATION = 180000; // 3 Minuten (in Millisekunden)
+    private long lastCriticalTime = 0;
+    private ArrayList<Long> reactionTimes = new ArrayList<>();
+    private static final int TEST_DURATION = 180000; // 3 Minuten (in ms)
     private long testStartTime;
+    private long lastSentTime;
+    private int currentIndex = 0;
+    private Vibrator vibrator;
+    private long lastReceivedTime; // Zeitstempel für Wi-Fi Empfang
+    private ArrayList<Long> latencyMeasurements = new ArrayList<>();
 
-    private int currentLevel = 0; // Simulierter Kurvenverlauf (steigt/fällt)
-    private boolean isGoingUp = true; // Richtung der Kurve
+    // Feste Herzfrequenzwerte
+    private static final int[] HEART_RATE_VALUES = {
+            94, 62, 75, 77, 60, 87, 91, 79, 38, 69, 93, 85, 79, 82, 99, 64, 74, 81, 82, 64,
+            74, 94, 53, 79, 60, 82, 67, 79, 84, 82, 51, 80, 94, 94, 90, 94, 60, 85, 174, 86,
+            64, 78, 79, 67, 80, 90, 58, 77, 83, 67, 99, 70, 77, 78, 80, 95, 85, 81, 83, 79,
+            69, 98, 83, 86, 69, 89, 97, 78, 66, 72, 77, 66, 73, 164, 73, 97, 99, 136, 97, 96,
+            98, 79, 88, 76, 84, 73, 128, 31, 75, 65, 74, 66, 84, 95, 86, 62, 91, 84, 96, 61,
+            80, 98, 70, 99, 77, 64, 89, 119, 90, 93, 97, 89, 72, 98, 81, 92, 94, 70, 87, 83,
+            99, 61, 64, 68, 78, 81, 94, 72, 66, 70, 88, 75, 75, 69, 73, 63, 90, 80, 76, 80,
+            91, 168, 63, 73, 84, 73, 67, 70, 85, 86, 61, 76, 92, 89, 63, 84, 62, 76, 97, 61,
+            96, 89, 97, 133, 70, 69, 86, 99, 90, 64, 75, 67, 99, 100, 123, 143, 98, 87, 70, 73
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_interpretation_mode);
 
-        vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         statusText = findViewById(R.id.statusText);
         startTestButton = findViewById(R.id.startTestButton);
         backButton = findViewById(R.id.backButton);
@@ -47,7 +55,8 @@ public class InterpretationModeActivity extends AppCompatActivity {
         startTestButton.setOnClickListener(v -> startTest());
         backButton.setOnClickListener(v -> finish());
 
-        // Nutzer kann irgendwo auf den Bildschirm tippen, um zu reagieren
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
         findViewById(android.R.id.content).setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN && testRunning) {
                 recordReaction();
@@ -62,130 +71,110 @@ public class InterpretationModeActivity extends AppCompatActivity {
         startTestButton.setVisibility(View.GONE);
         backButton.setVisibility(View.GONE);
         statusText.setText("Test läuft...");
-
         testStartTime = SystemClock.elapsedRealtime();
+        currentIndex = 0;
         scheduleNextStep();
     }
 
     private void scheduleNextStep() {
-        long elapsedTime = SystemClock.elapsedRealtime() - testStartTime;
-
-        if (elapsedTime >= TEST_DURATION) {
+        if (SystemClock.elapsedRealtime() - testStartTime >= TEST_DURATION || currentIndex >= HEART_RATE_VALUES.length) {
             endTest();
             return;
         }
 
-        int nextEventTime = random.nextInt(3000) + 1000; // Zufälliger Abstand: 1s - 4s
-
-        handler.postDelayed(this::generateNextCurveStep, nextEventTime);
+        handler.postDelayed(this::generateNextVibration, 1000); // 1 Sekunde
     }
 
-    private void generateNextCurveStep() {
+    private void generateNextVibration() {
         if (!testRunning) return;
 
-        if (isGoingUp) {
-            currentLevel++;
+        int heartRate = HEART_RATE_VALUES[currentIndex];
+        long currentTime = SystemClock.elapsedRealtime();
+        lastCriticalTime = currentTime;
+
+        Log.d("PulseVibrationTest", "Aktueller Puls: " + heartRate);
+        lastSentTime = SystemClock.elapsedRealtime();
+
+        // Vibrationsmuster je nach Pulswert
+        if (heartRate < 60) {
+            // Puls zu niedrig: lange starke Vibrationen bis normaler Bereich erreicht
+            triggerStrongVibration(2000);
+            Log.d("PulseVibrationTest", "Puls zu niedrig: lange starke Vibration gesendet.");
+        } else if (heartRate > 100) {
+            // Puls zu hoch: schnelle starke Impulse
+            triggerRapidVibrations();
+            Log.d("PulseVibrationTest", "Puls zu hoch: schnelle starke Impulse gesendet.");
         } else {
-            currentLevel--;
+            // Puls im normalen Bereich: kurze, schwache Impulse
+            triggerShortVibrations();
+            Log.d("PulseVibrationTest", "Puls im normalen Bereich: kurze, schwache Impulse gesendet.");
         }
 
-        // Hochpunkt erreicht
-        if (currentLevel >= 5) {
-            triggerPeak();
-            isGoingUp = false;
-        }
-        // Tiefpunkt erreicht
-        else if (currentLevel <= -5) {
-            triggerValley();
-            isGoingUp = true;
-        }
-        // Zwischenzustand (steigende oder fallende Kurve)
-        else {
-            triggerIntermediateState();
-        }
-
+        currentIndex++;
         scheduleNextStep();
     }
 
-    private void triggerPeak() {
-        lastPeakTime = SystemClock.elapsedRealtime();
-        vibratePattern(new long[]{130, 130, 130, 130, 130, 130}, 250); // Hochpunkt = schnelle Impulse
-        runOnUiThread(() -> statusText.setText("🟢 Hochpunkt erreicht!"));
-        System.out.println("🟢 Hochpunkt um " + lastPeakTime + " ms");
+    private void triggerStrongVibration(long duration) {
+        // Lange starke Vibration
+        vibrator.vibrate(duration);
+        lastReceivedTime = SystemClock.elapsedRealtime();
+        long latency = lastReceivedTime - lastSentTime;
+        latencyMeasurements.add(latency);
+        Log.d("InterpretationTest", "Wi-Fi Latenz gemessen: " + latency + " ms");
     }
 
-    private void triggerValley() {
-        lastValleyTime = SystemClock.elapsedRealtime();
-        vibrate(2000, 128); // Tiefpunkt = lange Vibration
-        runOnUiThread(() -> statusText.setText("🔵 Tiefpunkt erreicht!"));
-        System.out.println("🔵 Tiefpunkt um " + lastValleyTime + " ms");
+    private void triggerRapidVibrations() {
+        // Schnelle starke Vibrationen (mehrere Impulse)
+        vibrator.vibrate(new long[]{0, 100, 50, 100, 50, 100}, -1);  // [Pause, Vibration, Pause, Vibration, Pause, Vibration]
+        lastReceivedTime = SystemClock.elapsedRealtime();
+        long latency = lastReceivedTime - lastSentTime;
+        latencyMeasurements.add(latency);
+        Log.d("InterpretationTest", "Wi-Fi Latenz gemessen: " + latency + " ms");
     }
 
-    private void triggerIntermediateState() {
-        if (isGoingUp) {
-            long duration = 500 - (currentLevel * 20);
-            if (duration < 100) duration = 100;
-            vibrate(duration, 64);
-            runOnUiThread(() -> statusText.setText("📈 Steigend..."));
-            System.out.println("📈 Steigende Kurve");
-        } else {
-            long duration = 500 + (Math.abs(currentLevel) * 20);
-            if (duration > 1000) duration = 1000;
-            vibrate(duration, 64);
-            runOnUiThread(() -> statusText.setText("📉 Fallend..."));
-            System.out.println("📉 Fallende Kurve");
-        }
-    }
-
-    private void vibrate(long duration, int amplitude) {
-        if (vibrator != null) {
-            vibrator.vibrate(VibrationEffect.createOneShot(duration, amplitude));
-        }
-    }
-
-    private void vibratePattern(long[] pattern, int amplitude) {
-        if (vibrator != null) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
-        }
+    private void triggerShortVibrations() {
+        // Kurze, schwache Vibration
+        vibrator.vibrate(100); // 100 ms Vibration
+        lastReceivedTime = SystemClock.elapsedRealtime();
+        long latency = lastReceivedTime - lastSentTime;
+        latencyMeasurements.add(latency);
+        Log.d("InterpretationTest", "Wi-Fi Latenz gemessen: " + latency + " ms");
     }
 
     private void recordReaction() {
-        long reactionTime = SystemClock.elapsedRealtime();
-
-        if (lastPeakTime > 0 && reactionTime > lastPeakTime && reactionTime - lastPeakTime < 3000) {
-            long reactionDelay = reactionTime - lastPeakTime;
-            peakReactions.add(reactionDelay);
-            runOnUiThread(() -> statusText.setText("Reaktion auf Hochpunkt: " + reactionDelay + " ms"));
-            System.out.println("✅ Reaktion auf Hochpunkt: " + reactionDelay + " ms");
-        } else if (lastValleyTime > 0 && reactionTime > lastValleyTime && reactionTime - lastValleyTime < 3000) {
-            long reactionDelay = reactionTime - lastValleyTime;
-            valleyReactions.add(reactionDelay);
-            runOnUiThread(() -> statusText.setText("Reaktion auf Tiefpunkt: " + reactionDelay + " ms"));
-            System.out.println("✅ Reaktion auf Tiefpunkt: " + reactionDelay + " ms");
-        } else {
-            runOnUiThread(() -> statusText.setText("⚠ Falsche Reaktion!"));
-            System.out.println("⚠ Falsche Reaktion!");
+        if (testRunning) {
+            // Überprüfen, ob die Reaktion auf den richtigen Pulswert war
+            int heartRate = HEART_RATE_VALUES[currentIndex - 1]; // Der Wert, auf den wir reagieren sollten
+            if (heartRate < 60 || heartRate > 120) {
+                long reactionTime = SystemClock.elapsedRealtime() - lastCriticalTime;
+                reactionTimes.add(reactionTime);
+                Log.d("PulseVibrationTest", "Korrekte Reaktion erfasst: " + reactionTime + " ms");
+            } else {
+                // Falsche Reaktion, keine Reaktionszeit messen
+                Log.d("PulseVibrationTest", "Falsche Reaktion: Keine Reaktionszeit gemessen.");
+            }
         }
     }
 
     private void endTest() {
         testRunning = false;
-        backButton.setVisibility(View.VISIBLE);
         startTestButton.setVisibility(View.VISIBLE);
+        backButton.setVisibility(View.VISIBLE);
+        statusText.setText("Test beendet");
 
-        if (peakReactions.isEmpty() && valleyReactions.isEmpty()) {
-            statusText.setText("❌ Keine korrekten Reaktionen erfasst.");
-            return;
+        // Durchschnittliche Reaktionszeit berechnen
+        long sum = 0;
+        for (long time : reactionTimes) {
+            sum += time;
         }
+        long avgReactionTime = reactionTimes.isEmpty() ? 0 : sum / reactionTimes.size();
+        Log.d("PulseVibrationTest", "Durchschnittliche Reaktionszeit: " + avgReactionTime + " ms");
 
-        long avgPeakReaction = peakReactions.stream().mapToLong(Long::longValue).sum() / (peakReactions.isEmpty() ? 1 : peakReactions.size());
-        long avgValleyReaction = valleyReactions.stream().mapToLong(Long::longValue).sum() / (valleyReactions.isEmpty() ? 1 : valleyReactions.size());
-
-        String result = "Durchschnittliche Reaktionszeiten:\n" +
-                "🟢 Hochpunkt: " + avgPeakReaction + " ms\n" +
-                "🔵 Tiefpunkt: " + avgValleyReaction + " ms";
-
-        statusText.setText(result);
-        System.out.println(result);
+        long latencySum = 0;
+        for (long time : latencyMeasurements) {
+            latencySum += time;
+        }
+        long avgLatency = latencyMeasurements.isEmpty() ? 0 : latencySum / latencyMeasurements.size();
+        Log.d("InterpretationTest", "Durchschnittliche Wi-Fi Latenz: " + avgLatency + " ms");
     }
 }

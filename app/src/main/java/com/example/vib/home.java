@@ -46,32 +46,34 @@ public class home extends AppCompatActivity {
 
         modeButton.setOnClickListener(v -> {
             isMaxMode = !isMaxMode;
-            modeButton.setText(isMaxMode ? "Wechsel zu Min-Modus" : "Wechsel zu Max-Modus");
+            modeButton.setText(isMaxMode ? "Wechsel zu A-Modus" : "Wechsel zu B-Modus"); //A = Min, B = Max
         });
 
         backButton.setOnClickListener(v -> finish()); // Zurück zum Hauptmenü
     }
 
-    private void startMaxVibration() {
+    private void startMaxVibration() { //B
         if (vibrator == null) return;
         stopVibration(); // Vorherige Vibrationen stoppen
 
-        //long[] timings = {1000, 800, 600, 400, 200, 100}; // Immer schneller
+        long[] timings = {1400, 1200, 1000, 800, 600, 400, 200, 100, 50, 50, 50, 50, 50}; // Immer schneller
+        int[] amplitudes = {120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120};
         //int[] amplitudes = {100, 120, 140, 160, 180, 200};
-        long[] timings = {130, 130, 130, 130, 130, 130}; //hoher Wert = mehrere kurze Vibrationen
-        int[] amplitudes = {200, 200, 200, 200, 200, 200};
+        //long[] timings = {130, 130, 130, 130, 130, 130}; //hoher Wert = mehrere kurze Vibrationen
+        //int[] amplitudes = {200, 200, 200, 200, 200, 200};
 
         runVibrationPattern(timings, amplitudes);
     }
 
-    private void startMinVibration() {
+    private void startMinVibration() { //A
         if (vibrator == null) return;
         stopVibration(); // Vorherige Vibrationen stoppen!
 
-        //long[] timings = {100, 200, 400, 600, 800, 1000}; // Immer langsamer
+        long[] timings = {50, 50, 50, 50, 50, 100, 200, 400, 600, 800, 1000, 1200, 1400}; // Immer langsamer
+        int[] amplitudes = {120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120};
         //int[] amplitudes = {200, 180, 160, 140, 120, 100};
-        long[] timings = {2000}; // niedriger Wert = eine lange Vibration
-        int[] amplitudes = {200};
+        //long[] timings = {2000}; // niedriger Wert = eine lange Vibration
+        //int[] amplitudes = {200};
 
         runVibrationPattern(timings, amplitudes);
     }

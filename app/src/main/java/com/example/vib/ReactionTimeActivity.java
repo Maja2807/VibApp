@@ -20,10 +20,14 @@ public class ReactionTimeActivity extends AppCompatActivity {
     private Handler handler = new Handler();
     private Random random = new Random();
     private long vibrationStartTime;
+    private long wifiSendTime;
     private boolean waitingForReaction = false;
     private int remainingVibrations = 30; // Anzahl der Vibrationen pro Testlauf
     private List<Long> reactionTimes = new ArrayList<>(); // Speicherung der Reaktionszeiten
+    private List<Long> latencyTimes = new ArrayList<>(); // Speicherung der Wi-Fi-Latenzen
     private Button backButton;
+    private Runnable reactionTimeoutRunnable;
+    private static final long MAX_REACTION_TIME = 5000; // 5 Sekunden
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +44,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
     private void startTest() {
         reactionTimes.clear();
+        latencyTimes.clear();
         remainingVibrations = 30;
         backButton.setVisibility(View.GONE); // Zurück-Button ausblenden
         scheduleNextVibration();
@@ -56,10 +61,26 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
         handler.postDelayed(() -> {
             if (vibrator != null) {
+                wifiSendTime = SystemClock.elapsedRealtime();
                 VibrationEffect effect = VibrationEffect.createOneShot(200, 250);
                 vibrator.vibrate(effect);
                 vibrationStartTime = SystemClock.elapsedRealtime();
+                long latency = vibrationStartTime - wifiSendTime;
+                latencyTimes.add(latency);
+                Log.d("ReactionTimeTest", "Wi-Fi Latenz: " + latency + " ms");
                 waitingForReaction = true;
+
+                // Timeout für maximale Reaktionszeit setzen
+                reactionTimeoutRunnable = () -> {
+                    if (waitingForReaction) {
+                        Log.d("ReactionTimeTest", "Keine Reaktion innerhalb von 5 Sekunden");
+                        reactionTimes.add(MAX_REACTION_TIME);
+                        waitingForReaction = false;
+                        remainingVibrations--;
+                        scheduleNextVibration();
+                    }
+                };
+                handler.postDelayed(reactionTimeoutRunnable, MAX_REACTION_TIME);
             }
         }, delay);
     }
@@ -72,6 +93,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
             waitingForReaction = false;
             remainingVibrations--;
+            handler.removeCallbacks(reactionTimeoutRunnable); // Timeout verhindern, wenn rechtzeitig reagiert wurde
             scheduleNextVibration();
         }
     }
@@ -87,6 +109,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
 
     private void finishTest() {
         Log.d("ReactionTimeTest", "Alle Reaktionszeiten: " + reactionTimes.toString());
+        Log.d("ReactionTimeTest", "Alle Wi-Fi Latenzen: " + latencyTimes.toString());
 
         if (!reactionTimes.isEmpty()) {
             long sum = 0;
@@ -99,8 +122,20 @@ public class ReactionTimeActivity extends AppCompatActivity {
             Log.d("ReactionTimeTest", "Keine gültigen Reaktionszeiten erfasst.");
         }
 
+        if (!latencyTimes.isEmpty()) {
+            long sum = 0;
+            for (long time : latencyTimes) {
+                sum += time;
+            }
+            long averageLatency = sum / latencyTimes.size();
+            Log.d("ReactionTimeTest", "Durchschnittliche Wi-Fi Latenz: " + averageLatency + " ms");
+        } else {
+            Log.d("ReactionTimeTest", "Keine gültigen Wi-Fi Latenzen erfasst.");
+        }
+
         backButton.setVisibility(View.VISIBLE); // Zurück-Button wieder anzeigen
         findViewById(R.id.startTestButton).setEnabled(true);
     }
 
 }
+

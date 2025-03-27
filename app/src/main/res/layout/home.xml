@@ -66,7 +66,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:layout_marginLeft="20dp"
-        android:text="Wechsel zu Min-Modus" />
+        android:text="Wechsel zu A-Modus" />
 
     <Button
         android:id="@+id/backButton"
