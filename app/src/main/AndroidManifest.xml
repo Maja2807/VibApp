@@ -27,6 +27,7 @@
         <activity android:name=".home"/>
         <activity android:name=".ReactionTimeActivity"/>
         <activity android:name=".InterpretationModeActivity"/>
+        <activity android:name=".KombiActivity"/>
 
     </application>
 

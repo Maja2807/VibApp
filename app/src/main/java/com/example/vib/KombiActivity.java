@@ -14,7 +14,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
-public class InterpretationModeActivity extends AppCompatActivity {
+public class KombiActivity extends AppCompatActivity {
 
     private TextView statusText;
     private Button startTestButton, backButton;
@@ -46,7 +46,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_interpretation_mode);
+        setContentView(R.layout.activity_kombi);
 
         statusText = findViewById(R.id.statusText);
         startTestButton = findViewById(R.id.startTestButton);
@@ -104,10 +104,6 @@ public class InterpretationModeActivity extends AppCompatActivity {
             // Puls zu hoch: schnelle starke Impulse
             triggerRapidVibrations();
             Log.d("PulseVibrationTest", "Puls zu hoch: schnelle starke Impulse gesendet.");
-        } else {
-            // Puls im normalen Bereich: kurze, schwache Impulse
-            triggerShortVibrations();
-            Log.d("PulseVibrationTest", "Puls im normalen Bereich: kurze, schwache Impulse gesendet.");
         }
 
         currentIndex++;
@@ -126,15 +122,6 @@ public class InterpretationModeActivity extends AppCompatActivity {
     private void triggerRapidVibrations() {
         // Schnelle starke Vibrationen (mehrere Impulse)
         vibrator.vibrate(new long[]{0, 100, 50, 100, 50, 100}, -1);  // [Pause, Vibration, Pause, Vibration, Pause, Vibration]
-        lastReceivedTime = SystemClock.elapsedRealtime();
-        long latency = lastReceivedTime - lastSentTime;
-        latencyMeasurements.add(latency);
-        Log.d("InterpretationTest", "Wi-Fi Latenz gemessen: " + latency + " ms");
-    }
-
-    private void triggerShortVibrations() {
-        // Kurze, schwache Vibration
-        vibrator.vibrate(100); // 100 ms Vibration
         lastReceivedTime = SystemClock.elapsedRealtime();
         long latency = lastReceivedTime - lastSentTime;
         latencyMeasurements.add(latency);

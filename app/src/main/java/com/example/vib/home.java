@@ -9,6 +9,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+// Trainingsmodus
 public class home extends AppCompatActivity {
     private TextView text;
     private Button startButton;

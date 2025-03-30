@@ -11,22 +11,31 @@ public class MainHome extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mainhome);
 
+        // Training
         Button vibrationButton = findViewById(R.id.Test1);
         vibrationButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainHome.this, home.class);
             startActivity(intent);
         });
 
+        // Reaktionszeittest
         Button reactionTestButton = findViewById(R.id.reactionTestButton);
         reactionTestButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainHome.this, ReactionTimeActivity.class);
             startActivity(intent);
         });
 
-        // Neuer Button für den Interpretationstest
+        // Interpretationstest
         Button interpretationButton = findViewById(R.id.interpretationTestButton);
         interpretationButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainHome.this, InterpretationModeActivity.class); // Ziel ist die neue Activity
+            Intent intent = new Intent(MainHome.this, InterpretationModeActivity.class);
+            startActivity(intent);
+        });
+
+        // Kombi
+        Button kombiButton = findViewById(R.id.kombiButton);
+        kombiButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainHome.this, KombiActivity.class);
             startActivity(intent);
         });
 
