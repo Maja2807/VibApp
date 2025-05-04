@@ -64,6 +64,8 @@ public class ReactionTimeActivity extends AppCompatActivity {
                 wifiSendTime = SystemClock.elapsedRealtime();
                 VibrationEffect effect = VibrationEffect.createOneShot(200, 250);
                 vibrator.vibrate(effect);
+
+                // WiFi-Latenz messen
                 vibrationStartTime = SystemClock.elapsedRealtime();
                 long latency = vibrationStartTime - wifiSendTime;
                 latencyTimes.add(latency);
@@ -111,6 +113,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
         Log.d("ReactionTimeTest", "Alle Reaktionszeiten: " + reactionTimes.toString());
         Log.d("ReactionTimeTest", "Alle Wi-Fi Latenzen: " + latencyTimes.toString());
 
+        // durchschnittliche Reaktionszeit berechnen
         if (!reactionTimes.isEmpty()) {
             long sum = 0;
             for (long time : reactionTimes) {
@@ -122,6 +125,7 @@ public class ReactionTimeActivity extends AppCompatActivity {
             Log.d("ReactionTimeTest", "Keine gültigen Reaktionszeiten erfasst.");
         }
 
+        // durchschnittliche WiFi-Latenz berechnen
         if (!latencyTimes.isEmpty()) {
             long sum = 0;
             for (long time : latencyTimes) {

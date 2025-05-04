@@ -32,7 +32,7 @@ public class MainHome extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Kombi
+        // Kombinationstest
         Button kombiButton = findViewById(R.id.kombiButton);
         kombiButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainHome.this, KombiActivity.class);

@@ -30,7 +30,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
     private long lastReceivedTime; // Zeitstempel für Wi-Fi Empfang
     private ArrayList<Long> latencyMeasurements = new ArrayList<>();
 
-    // Feste Herzfrequenzwerte
+    // Herzfrequenzwerte
     private static final int[] HEART_RATE_VALUES = { //6x zu niedrig, 6x zu hoch
             94, 62, 75, 77, 60, 87, 91, 79, 38, 69, 93, 85, 79, 82, 99, 64, 74, 81, 82, 64,
             74, 94, 53, 79, 60, 82, 67, 79, 84, 82, 51, 80, 94, 94, 90, 94, 60, 85, 174, 86,
@@ -125,7 +125,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
 
     private void triggerRapidVibrations() {
         // Schnelle starke Vibrationen (mehrere Impulse)
-        vibrator.vibrate(new long[]{0, 100, 50, 100, 50, 100}, -1);  // [Pause, Vibration, Pause, Vibration, Pause, Vibration]
+        vibrator.vibrate(new long[]{0, 100, 50, 100, 50, 100}, -1);
         lastReceivedTime = SystemClock.elapsedRealtime();
         long latency = lastReceivedTime - lastSentTime;
         latencyMeasurements.add(latency);
@@ -144,7 +144,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
     private void recordReaction() {
         if (testRunning) {
             // Überprüfen, ob die Reaktion auf den richtigen Pulswert war
-            int heartRate = HEART_RATE_VALUES[currentIndex - 1]; // Der Wert, auf den wir reagieren sollten
+            int heartRate = HEART_RATE_VALUES[currentIndex - 1]; // Der Wert, auf den reagiert werden soll
             if (heartRate < 60 || heartRate > 100) {
                 long reactionTime = SystemClock.elapsedRealtime() - lastCriticalTime;
                 reactionTimes.add(reactionTime);
@@ -164,7 +164,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
         backButton.setVisibility(View.VISIBLE);
         statusText.setText("Test beendet");
 
-        // Durchschnittliche Reaktionszeit berechnen
+        // durchschnittliche Reaktionszeit berechnen
         long sum = 0;
         for (long time : reactionTimes) {
             sum += time;
@@ -172,6 +172,7 @@ public class InterpretationModeActivity extends AppCompatActivity {
         long avgReactionTime = reactionTimes.isEmpty() ? 0 : sum / reactionTimes.size();
         Log.d("PulseVibrationTest", "Durchschnittliche Reaktionszeit: " + avgReactionTime + " ms");
 
+        // durchschnittliche WiFi-Latenz berechnen
         long latencySum = 0;
         for (long time : latencyMeasurements) {
             latencySum += time;
